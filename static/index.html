@@ -787,6 +787,13 @@
     input.addEventListener("keydown", e => {
       if (e.key === "Enter") search();
     });
+
+    // Auto-load from URL hash (e.g. #pikachu)
+    const hash = location.hash.slice(1);
+    if (hash) {
+      input.value = hash;
+      search();
+    }
   </script>
 </body>
 </html>
