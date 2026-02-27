@@ -1,6 +1,6 @@
 # Pokedex
 
-A Pokemon trading card viewer built with Go and vanilla HTML/CSS/JS.
+A Pokemon card viewer built with Go and vanilla HTML/CSS/JS.
 
 Search for any Pokemon and see it displayed as a TCG-style card with a 3D flip animation — the front shows the card with artwork, abilities, and moves, and the back shows detailed base stats.
 
