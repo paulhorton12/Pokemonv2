@@ -1,12 +1,34 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/labstack/echo/v4"
+	_ "github.com/mattn/go-sqlite3"
 )
+
+var db *sql.DB
+
+func initDB() {
+	var err error
+	db, err = sql.Open("sqlite3", "pokedex.db")
+	if err != nil {
+		panic(err)
+	}
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS cache (
+		name TEXT PRIMARY KEY,
+		data TEXT,
+		cached_at DATETIME
+	)`)
+	if err != nil {
+		panic(err)
+	}
+}
 
 // structs to match the pokemon api json
 type AbilityInfo struct {
@@ -44,9 +66,21 @@ type Pokemon struct {
 }
 
 func getPokemon(c echo.Context) error {
-	name := c.Param("name")
+	name := strings.ToLower(c.Param("name"))
 
-	// fetch from pokemon api
+	// check cache for a fresh entry (within 24 hours)
+	var data string
+	err := db.QueryRow(
+		"SELECT data FROM cache WHERE name = ? AND cached_at > ?",
+		name, time.Now().Add(-24*time.Hour),
+	).Scan(&data)
+	if err == nil {
+		var pokemon Pokemon
+		json.Unmarshal([]byte(data), &pokemon)
+		return c.JSON(http.StatusOK, pokemon)
+	}
+
+	// cache miss or expired — fetch from pokemon api
 	resp, err := http.Get(fmt.Sprintf("https://pokeapi.co/api/v2/pokemon/%s", name))
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to fetch"})
@@ -60,10 +94,19 @@ func getPokemon(c echo.Context) error {
 	var pokemon Pokemon
 	json.NewDecoder(resp.Body).Decode(&pokemon)
 
+	// store in cache
+	jsonBytes, _ := json.Marshal(pokemon)
+	db.Exec("INSERT OR REPLACE INTO cache (name, data, cached_at) VALUES (?, ?, ?)",
+		name, string(jsonBytes), time.Now(),
+	)
+
 	return c.JSON(http.StatusOK, pokemon)
 }
 
 func main() {
+	initDB()
+	defer db.Close()
+
 	e := echo.New()
 	e.GET("/pokemon/:name", getPokemon)
 	e.Static("/", "static")
