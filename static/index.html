@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pokedex</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #2a2a3d;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      color: #f8d030;
+      margin-bottom: 20px;
+      letter-spacing: 2px;
+      text-shadow: 2px 2px 0 #3060a8;
+    }
+
+    .search-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 28px;
+      width: 100%;
+      max-width: 350px;
+    }
+
+    .search-bar input {
+      flex: 1;
+      padding: 10px 14px;
+      font-size: 1rem;
+      border: 2px solid #555;
+      border-radius: 8px;
+      outline: none;
+      background: #1e1e2e;
+      color: #eee;
+    }
+
+    .search-bar input:focus { border-color: #f8d030; }
+    .search-bar input::placeholder { color: #777; }
+
+    .search-bar button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #333;
+      background: #f8d030;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .search-bar button:hover { background: #e8c020; }
+    .search-bar button:disabled { background: #666; color: #999; cursor: not-allowed; }
+
+    .flip-hint {
+      color: #888;
+      font-size: 0.8rem;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .flip-hint.visible { display: block; }
+
+    .error {
+      color: #ff6b6b;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    /* ---- 3D Flip Container ---- */
+    .card-wrapper {
+      display: none;
+      perspective: 1000px;
+      width: 340px;
+      height: 490px;
+      cursor: pointer;
+    }
+
+    .card-wrapper.visible { display: block; }
+
+    .card-flipper {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.7s cubic-bezier(0.4, 0.0, 0.2, 1);
+    }
+
+    .card-wrapper.flipped .card-flipper {
+      transform: rotateY(180deg);
+    }
+
+    .card-front,
+    .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .card-back {
+      transform: rotateY(180deg);
+    }
+
+    /* ---- FRONT: Pokemon TCG Card ---- */
+    .pokemon-card-front {
+      width: 100%;
+      height: 100%;
+      border-radius: 14px;
+      padding: 10px;
+      box-shadow:
+        0 0 8px rgba(0,0,0,0.4),
+        0 8px 30px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+
+    .card-inner {
+      background: #fff;
+      border-radius: 8px;
+      padding: 12px 14px 10px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+
+    .card-stage {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #555;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+
+    .card-name {
+      font-size: 1.25rem;
+      font-weight: 800;
+      text-transform: capitalize;
+      flex: 1;
+    }
+
+    .card-hp {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #cc0000;
+      margin-right: 4px;
+      flex-shrink: 0;
+    }
+
+    .card-hp span { font-size: 1.3rem; }
+
+    .energy-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 900;
+      color: #fff;
+      flex-shrink: 0;
+      border: 2px solid rgba(0,0,0,0.15);
+    }
+
+    .art-frame {
+      border: 4px solid #bbb;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 6px;
+      position: relative;
+      background: linear-gradient(135deg, #dae8d0 0%, #a8d8ea 50%, #dae8d0 100%);
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .art-frame img {
+      height: 180px;
+      width: auto;
+      object-fit: contain;
+      filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.25));
+    }
+
+    .card-info-line {
+      font-size: 0.6rem;
+      color: #666;
+      text-align: center;
+      margin-bottom: 10px;
+      font-style: italic;
+    }
+
+    .card-divider {
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(0,0,0,0.12), transparent);
+      margin: 8px 0;
+    }
+
+    .move-row {
+      display: flex;
+      align-items: center;
+      padding: 8px 0;
+    }
+
+    .move-energy {
+      display: flex;
+      gap: 3px;
+      width: 50px;
+      flex-shrink: 0;
+      justify-content: center;
+    }
+
+    .energy-sm {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.55rem;
+      font-weight: 900;
+      color: #fff;
+      border: 1.5px solid rgba(0,0,0,0.15);
+    }
+
+    .move-info { flex: 1; }
+
+    .move-name {
+      font-size: 0.95rem;
+      font-weight: 800;
+      text-transform: capitalize;
+    }
+
+    .move-desc {
+      font-size: 0.7rem;
+      color: #555;
+      margin-top: 2px;
+    }
+
+    .move-damage {
+      font-size: 1.3rem;
+      font-weight: 800;
+      width: 45px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .card-bottom {
+      display: flex;
+      border-top: 1px solid #ddd;
+      margin-top: auto;
+      padding-top: 6px;
+      font-size: 0.6rem;
+    }
+
+    .card-bottom-section { flex: 1; text-align: center; }
+
+    .card-bottom-label {
+      font-weight: 700;
+      text-transform: lowercase;
+      color: #888;
+      margin-bottom: 3px;
+    }
+
+    .card-bottom-value {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      font-weight: 700;
+      font-size: 0.7rem;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      padding-top: 6px;
+      margin-top: 6px;
+      border-top: 1px solid #eee;
+      font-size: 0.55rem;
+      color: #999;
+    }
+
+    .card-footer-id { font-weight: 700; }
+
+    /* ---- BACK: Stats Card ---- */
+    .pokemon-card-back {
+      width: 100%;
+      height: 100%;
+      border-radius: 14px;
+      padding: 10px;
+      box-shadow:
+        0 0 8px rgba(0,0,0,0.4),
+        0 8px 30px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+
+    .back-inner {
+      background: #fff;
+      border-radius: 8px;
+      padding: 16px 18px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .back-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #eee;
+    }
+
+    .back-sprite {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      filter: drop-shadow(1px 2px 3px rgba(0,0,0,0.2));
+    }
+
+    .back-title-area { flex: 1; }
+
+    .back-name {
+      font-size: 1.4rem;
+      font-weight: 800;
+      text-transform: capitalize;
+    }
+
+    .back-types {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .type-badge {
+      padding: 2px 10px;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+
+    .back-section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #999;
+      margin-bottom: 10px;
+    }
+
+    .stats-grid {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat-row {
+      display: flex;
+      align-items: center;
+    }
+
+    .stat-label {
+      width: 90px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      width: 32px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-align: right;
+      margin-right: 10px;
+    }
+
+    .stat-bar-track {
+      flex: 1;
+      height: 10px;
+      background: #eee;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .stat-bar-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 0;
+    }
+
+    .back-total {
+      text-align: center;
+      padding-top: 12px;
+      border-top: 2px solid #eee;
+      margin-top: auto;
+    }
+
+    .back-total-label {
+      font-size: 0.7rem;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .back-total-value {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #333;
+    }
+
+    /* Energy type colors */
+    .energy-normal   { background: #a8a878; }
+    .energy-fire     { background: #f08030; }
+    .energy-water    { background: #6890f0; }
+    .energy-electric { background: #f8d030; color: #333; }
+    .energy-grass    { background: #78c850; }
+    .energy-ice      { background: #98d8d8; color: #333; }
+    .energy-fighting { background: #c03028; }
+    .energy-poison   { background: #a040a0; }
+    .energy-ground   { background: #e0c068; color: #333; }
+    .energy-flying   { background: #a890f0; }
+    .energy-psychic  { background: #f85888; }
+    .energy-bug      { background: #a8b820; }
+    .energy-rock     { background: #b8a038; }
+    .energy-ghost    { background: #705898; }
+    .energy-dragon   { background: #7038f8; }
+    .energy-dark     { background: #705848; }
+    .energy-steel    { background: #b8b8d0; color: #333; }
+    .energy-fairy    { background: #ee99ac; }
+
+    /* Card border colors per primary type */
+    .card-normal   { background: linear-gradient(145deg, #c8c8a8, #a8a878, #c8c8a8); }
+    .card-fire     { background: linear-gradient(145deg, #f8a860, #f08030, #f8a860); }
+    .card-water    { background: linear-gradient(145deg, #98b8f8, #6890f0, #98b8f8); }
+    .card-electric { background: linear-gradient(145deg, #fae878, #f8d030, #fae878); }
+    .card-grass    { background: linear-gradient(145deg, #a0e078, #78c850, #a0e078); }
+    .card-ice      { background: linear-gradient(145deg, #c0f0f0, #98d8d8, #c0f0f0); }
+    .card-fighting { background: linear-gradient(145deg, #e05848, #c03028, #e05848); }
+    .card-poison   { background: linear-gradient(145deg, #c060c0, #a040a0, #c060c0); }
+    .card-ground   { background: linear-gradient(145deg, #f0d888, #e0c068, #f0d888); }
+    .card-flying   { background: linear-gradient(145deg, #c8b8f8, #a890f0, #c8b8f8); }
+    .card-psychic  { background: linear-gradient(145deg, #f880a8, #f85888, #f880a8); }
+    .card-bug      { background: linear-gradient(145deg, #c0d048, #a8b820, #c0d048); }
+    .card-rock     { background: linear-gradient(145deg, #d0c058, #b8a038, #d0c058); }
+    .card-ghost    { background: linear-gradient(145deg, #9878b8, #705898, #9878b8); }
+    .card-dragon   { background: linear-gradient(145deg, #9060f8, #7038f8, #9060f8); }
+    .card-dark     { background: linear-gradient(145deg, #907868, #705848, #907868); }
+    .card-steel    { background: linear-gradient(145deg, #d0d0e8, #b8b8d0, #d0d0e8); }
+    .card-fairy    { background: linear-gradient(145deg, #f8c0cc, #ee99ac, #f8c0cc); }
+
+    .type-normal   { background: #a8a878; }
+    .type-fire     { background: #f08030; }
+    .type-water    { background: #6890f0; }
+    .type-electric { background: #f8d030; color: #333; }
+    .type-grass    { background: #78c850; }
+    .type-ice      { background: #98d8d8; color: #333; }
+    .type-fighting { background: #c03028; }
+    .type-poison   { background: #a040a0; }
+    .type-ground   { background: #e0c068; color: #333; }
+    .type-flying   { background: #a890f0; }
+    .type-psychic  { background: #f85888; }
+    .type-bug      { background: #a8b820; }
+    .type-rock     { background: #b8a038; }
+    .type-ghost    { background: #705898; }
+    .type-dragon   { background: #7038f8; }
+    .type-dark     { background: #705848; }
+    .type-steel    { background: #b8b8d0; color: #333; }
+    .type-fairy    { background: #ee99ac; }
+  </style>
+</head>
+<body>
+  <h1>Pokedex</h1>
+
+  <div class="search-bar">
+    <input type="text" id="nameInput" placeholder="Enter Pokemon name..." autofocus>
+    <button id="searchBtn">Search</button>
+  </div>
+
+  <p class="error" id="error"></p>
+  <p class="flip-hint" id="flipHint">Click card to flip</p>
+
+  <div class="card-wrapper" id="cardWrapper">
+    <div class="card-flipper">
+
+      <!-- FRONT -->
+      <div class="card-front">
+        <div class="pokemon-card-front" id="pokemonCardFront">
+          <div class="card-inner">
+            <div class="card-header">
+              <span class="card-stage">Basic</span>
+              <span class="card-name" id="cardName"></span>
+              <span class="card-hp">HP <span id="cardHp"></span></span>
+              <span class="energy-icon" id="cardEnergy"></span>
+            </div>
+            <div class="art-frame">
+              <img id="cardArt" src="" alt="">
+            </div>
+            <div class="card-info-line" id="cardInfoLine"></div>
+            <div id="movesSection"></div>
+            <div class="card-bottom">
+              <div class="card-bottom-section">
+                <div class="card-bottom-label">weakness</div>
+                <div class="card-bottom-value" id="weakness"></div>
+              </div>
+              <div class="card-bottom-section">
+                <div class="card-bottom-label">resistance</div>
+                <div class="card-bottom-value" id="resistance"></div>
+              </div>
+              <div class="card-bottom-section">
+                <div class="card-bottom-label">retreat</div>
+                <div class="card-bottom-value" id="retreat"></div>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span class="card-footer-id" id="cardFooterId"></span>
+              <span id="cardFooterText"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BACK -->
+      <div class="card-back">
+        <div class="pokemon-card-back" id="pokemonCardBack">
+          <div class="back-inner">
+            <div class="back-header">
+              <img class="back-sprite" id="backSprite" src="" alt="">
+              <div class="back-title-area">
+                <div class="back-name" id="backName"></div>
+                <div class="back-types" id="backTypes"></div>
+              </div>
+            </div>
+            <div class="back-section-label">Base Stats</div>
+            <div class="stats-grid" id="statsGrid"></div>
+            <div class="back-total">
+              <div class="back-total-label">Total</div>
+              <div class="back-total-value" id="statTotal"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const input = document.getElementById("nameInput");
+    const btn = document.getElementById("searchBtn");
+    const errorEl = document.getElementById("error");
+    const wrapper = document.getElementById("cardWrapper");
+    const flipHint = document.getElementById("flipHint");
+
+    const typeSymbols = {
+      normal: "N", fire: "R", water: "W", electric: "L", grass: "G",
+      ice: "I", fighting: "F", poison: "P", ground: "D", flying: "C",
+      psychic: "M", bug: "B", rock: "K", ghost: "H", dragon: "N",
+      dark: "D", steel: "S", fairy: "Y"
+    };
+
+    const weaknessMap = {
+      normal: "fighting", fire: "water", water: "electric", electric: "ground",
+      grass: "fire", ice: "fighting", fighting: "psychic", poison: "ground",
+      ground: "water", flying: "electric", psychic: "dark", bug: "fire",
+      rock: "water", ghost: "dark", dragon: "fairy", dark: "fighting",
+      steel: "fire", fairy: "steel"
+    };
+
+    const resistanceMap = {
+      normal: null, fire: "grass", water: "fire", electric: "flying",
+      grass: "water", ice: "ice", fighting: "bug", poison: "grass",
+      ground: "electric", flying: "ground", psychic: "fighting", bug: "grass",
+      rock: "normal", ghost: "normal", dragon: "fire", dark: "psychic",
+      steel: "normal", fairy: "fighting"
+    };
+
+    const statColors = {
+      hp: "#ff5959",
+      attack: "#f5ac78",
+      defense: "#fae078",
+      "special-attack": "#9db7f5",
+      "special-defense": "#a7db8d",
+      speed: "#fa92b2"
+    };
+
+    const statLabels = {
+      hp: "HP",
+      attack: "Attack",
+      defense: "Defense",
+      "special-attack": "Sp. Atk",
+      "special-defense": "Sp. Def",
+      speed: "Speed"
+    };
+
+    // Flip on click
+    wrapper.addEventListener("click", () => {
+      wrapper.classList.toggle("flipped");
+    });
+
+    function energyDot(type, sizeClass) {
+      const sym = typeSymbols[type] || "?";
+      return `<span class="${sizeClass} energy-${type}">${sym}</span>`;
+    }
+
+    function getStat(stats, name) {
+      const s = stats.find(s => s.stat.name === name);
+      return s ? s.base_stat : 0;
+    }
+
+    function capitalize(s) {
+      return s.replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    async function search() {
+      const name = input.value.trim().toLowerCase();
+      if (!name) return;
+
+      errorEl.textContent = "";
+      wrapper.classList.remove("visible", "flipped");
+      flipHint.classList.remove("visible");
+      btn.disabled = true;
+      btn.textContent = "...";
+
+      try {
+        const res = await fetch(`/pokemon/${encodeURIComponent(name)}`);
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || "Something went wrong");
+        }
+
+        const p = await res.json();
+        const primaryType = p.types[0].type.name;
+        const secondaryType = p.types[1] ? p.types[1].type.name : null;
+        const artUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${p.id}.png`;
+        const pokeNum = String(p.id).padStart(3, "0");
+        const typesText = p.types.map(t => t.type.name).join("/");
+
+        // ===== FRONT =====
+        const frontEl = document.getElementById("pokemonCardFront");
+        frontEl.className = "pokemon-card-front card-" + primaryType;
+
+        document.getElementById("cardName").textContent = p.name;
+        document.getElementById("cardHp").textContent = getStat(p.stats, "hp");
+
+        const energyEl = document.getElementById("cardEnergy");
+        energyEl.className = "energy-icon energy-" + primaryType;
+        energyEl.textContent = typeSymbols[primaryType] || "?";
+
+        document.getElementById("cardArt").src = artUrl;
+        document.getElementById("cardInfoLine").textContent =
+          `NO. ${pokeNum}  ${capitalize(typesText)} Pokemon`;
+
+        // Moves
+        const movesSection = document.getElementById("movesSection");
+        let movesHtml = "";
+
+        if (p.abilities.length > 0) {
+          const ab = p.abilities[0];
+          movesHtml += `
+            <div class="card-divider"></div>
+            <div class="move-row">
+              <div class="move-energy">${energyDot(primaryType, "energy-sm")}</div>
+              <div class="move-info">
+                <div class="move-name">${ab.ability.name.replace("-", " ")}</div>
+                <div class="move-desc">${ab.is_hidden ? "Hidden ability" : "Ability"}</div>
+              </div>
+              <div class="move-damage"></div>
+            </div>`;
+        }
+
+        const atk = getStat(p.stats, "attack");
+        const spAtk = getStat(p.stats, "special-attack");
+        const bestAtk = Math.max(atk, spAtk);
+        const atkType = secondaryType || primaryType;
+        const energyCost = bestAtk >= 100 ? 3 : bestAtk >= 60 ? 2 : 1;
+
+        movesHtml += `
+          <div class="card-divider"></div>
+          <div class="move-row">
+            <div class="move-energy">
+              ${Array(energyCost).fill(energyDot(atkType, "energy-sm")).join("")}
+            </div>
+            <div class="move-info">
+              <div class="move-name">${capitalize(primaryType)} Strike</div>
+            </div>
+            <div class="move-damage">${Math.round(bestAtk / 3) * 10}</div>
+          </div>`;
+
+        movesSection.innerHTML = movesHtml;
+
+        const weakType = weaknessMap[primaryType];
+        document.getElementById("weakness").innerHTML =
+          weakType ? energyDot(weakType, "energy-sm") + " x2" : "—";
+
+        const resistType = resistanceMap[primaryType];
+        document.getElementById("resistance").innerHTML =
+          resistType ? energyDot(resistType, "energy-sm") + " -30" : "—";
+
+        const speed = getStat(p.stats, "speed");
+        const retreatCount = speed >= 100 ? 1 : speed >= 50 ? 2 : 3;
+        document.getElementById("retreat").innerHTML = Array(retreatCount)
+          .fill(`<span class="energy-sm energy-normal">N</span>`).join("");
+
+        document.getElementById("cardFooterId").textContent = `${pokeNum} / 1025`;
+        document.getElementById("cardFooterText").textContent =
+          `${capitalize(p.name)} — ${capitalize(typesText)} Type`;
+
+        // ===== BACK =====
+        const backEl = document.getElementById("pokemonCardBack");
+        backEl.className = "pokemon-card-back card-" + primaryType;
+
+        document.getElementById("backSprite").src = artUrl;
+        document.getElementById("backName").textContent = p.name;
+
+        document.getElementById("backTypes").innerHTML = p.types
+          .map(t => `<span class="type-badge type-${t.type.name}">${t.type.name}</span>`)
+          .join("");
+
+        // Stats bars
+        let total = 0;
+        const statsGrid = document.getElementById("statsGrid");
+        statsGrid.innerHTML = p.stats.map(s => {
+          total += s.base_stat;
+          const pct = Math.min(100, (s.base_stat / 255) * 100);
+          const color = statColors[s.stat.name] || "#8888cc";
+          const label = statLabels[s.stat.name] || s.stat.name;
+          return `
+            <div class="stat-row">
+              <span class="stat-label">${label}</span>
+              <span class="stat-value">${s.base_stat}</span>
+              <div class="stat-bar-track">
+                <div class="stat-bar-fill" data-width="${pct}" style="background:${color}"></div>
+              </div>
+            </div>`;
+        }).join("");
+
+        document.getElementById("statTotal").textContent = total;
+
+        // Show card
+        wrapper.classList.add("visible");
+        flipHint.classList.add("visible");
+
+        // Animate stat bars after a brief delay
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            document.querySelectorAll(".stat-bar-fill").forEach(bar => {
+              bar.style.width = bar.dataset.width + "%";
+            });
+          });
+        });
+
+      } catch (err) {
+        errorEl.textContent = err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Search";
+      }
+    }
+
+    btn.addEventListener("click", search);
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter") search();
+    });
+  </script>
+</body>
+</html>
