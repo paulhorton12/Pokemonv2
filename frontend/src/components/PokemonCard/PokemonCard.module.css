@@ -1,0 +1,344 @@
+/* ---- 3D Flip Container ---- */
+.cardWrapper {
+  perspective: 1000px;
+  width: 340px;
+  height: 490px;
+  cursor: pointer;
+}
+
+.cardFlipper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.cardWrapper.flipped .cardFlipper {
+  transform: rotateY(180deg);
+}
+
+.cardFace {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.cardBack {
+  transform: rotateY(180deg);
+}
+
+/* ---- FRONT: Pokemon TCG Card ---- */
+.cardOuter {
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow:
+    0 0 8px rgba(0,0,0,0.4),
+    0 8px 30px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.cardInner {
+  background: #fff;
+  border-radius: 8px;
+  padding: 12px 14px 10px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.cardStage {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #555;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.cardName {
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-transform: capitalize;
+  flex: 1;
+}
+
+.cardHp {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #cc0000;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.cardHpValue {
+  font-size: 1.3rem;
+}
+
+.energyIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: #fff;
+  flex-shrink: 0;
+  border: 2px solid rgba(0,0,0,0.15);
+}
+
+.energySm {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  font-weight: 900;
+  color: #fff;
+  border: 1.5px solid rgba(0,0,0,0.15);
+}
+
+.artFrame {
+  border: 4px solid #bbb;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 6px;
+  position: relative;
+  background: linear-gradient(135deg, #dae8d0 0%, #a8d8ea 50%, #dae8d0 100%);
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.artFrame img {
+  height: 180px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.25));
+}
+
+.infoLine {
+  font-size: 0.6rem;
+  color: #666;
+  text-align: center;
+  margin-bottom: 10px;
+  font-style: italic;
+}
+
+.divider {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.12), transparent);
+  margin: 8px 0;
+}
+
+.moveRow {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.moveEnergy {
+  display: flex;
+  gap: 3px;
+  width: 50px;
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+.moveInfo { flex: 1; }
+
+.moveName {
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.moveDesc {
+  font-size: 0.7rem;
+  color: #555;
+  margin-top: 2px;
+}
+
+.moveDamage {
+  font-size: 1.3rem;
+  font-weight: 800;
+  width: 45px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.cardBottom {
+  display: flex;
+  border-top: 1px solid #ddd;
+  margin-top: auto;
+  padding-top: 6px;
+  font-size: 0.6rem;
+}
+
+.bottomSection { flex: 1; text-align: center; }
+
+.bottomLabel {
+  font-weight: 700;
+  text-transform: lowercase;
+  color: #888;
+  margin-bottom: 3px;
+}
+
+.bottomValue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 6px;
+  margin-top: 6px;
+  border-top: 1px solid #eee;
+  font-size: 0.55rem;
+  color: #999;
+}
+
+.footerId { font-weight: 700; }
+
+/* ---- BACK: Stats Card ---- */
+.backInner {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px 18px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.backHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #eee;
+}
+
+.backSprite {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  filter: drop-shadow(1px 2px 3px rgba(0,0,0,0.2));
+}
+
+.backTitleArea { flex: 1; }
+
+.backName {
+  font-size: 1.4rem;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.backTypes {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.typeBadge {
+  padding: 2px 10px;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.sectionLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #999;
+  margin-bottom: 10px;
+}
+
+.statsGrid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.statRow {
+  display: flex;
+  align-items: center;
+}
+
+.statLabel {
+  width: 90px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.statValue {
+  width: 32px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-align: right;
+  margin-right: 10px;
+}
+
+.statBarTrack {
+  flex: 1;
+  height: 10px;
+  background: #eee;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.statBarFill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.backTotal {
+  text-align: center;
+  padding-top: 12px;
+  border-top: 2px solid #eee;
+  margin-top: auto;
+}
+
+.totalLabel {
+  font-size: 0.7rem;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.totalValue {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #333;
+}

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -109,6 +110,10 @@ func main() {
 
 	e := echo.New()
 	e.GET("/pokemon/:name", getPokemon)
-	e.Static("/", "static")
+	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		Root:   "frontend/dist",
+		HTML5:  true,
+		Browse: false,
+	}))
 	e.Start(":8080")
 }
